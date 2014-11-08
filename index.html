@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Regression Model of Automatic and Manual Cars by shinezhou9</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Regression Model of Automatic and Manual Cars</h1>
+          <h2>Regression Model Project</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/shinezhou9/Regression_project/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/shinezhou9/Regression_project/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/shinezhou9/Regression_project" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a id="regression-model-of-automatic-and-manual-cars" class="anchor" href="#regression-model-of-automatic-and-manual-cars" aria-hidden="true"><span class="octicon octicon-link"></span></a>Regression Model of Automatic and Manual Cars</h1>
+
+<h2>
+<a id="executive-summary" class="anchor" href="#executive-summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Executive Summary</h2>
+
+<ul>
+<li>In this report we will use a dataset <code>mtcars</code> from the 1974 Motor Trend US magazine to explore if an automatic or manual transmission have different impact on miles per gallon (MPG), and How much is the difference.</li>
+<li>Using hypothesis testing and simple linear regression (regarding only transmission types), we found there is a signficant difference in MPG for automatic and manual cars, and manual cars has 7.245 more MPGs on average. However, this is a biased coefficient since we have other variables that are highly related to <code>mpg</code>. </li>
+<li>To build a multivariate linear regression model, we used both correlation and nested likelihood ratio test to adjust the model for other confounding variables, such as the weight and horsepower of the car. </li>
+<li>Runing a multivariate regression to get a better estimate of the difference, and validating by diagnostics plots.</li>
+<li>Multivariate linear model shows that with 85.87% confidence interval, manual cars has 2.084 more miles per gallon than automatic transmission cars, therefore, with 0.05 significance level, we concluded that there is no significantdifference between automatic and manual cars in MPG.</li>
+</ul>
+
+<h2>
+<a id="dataset---motor-trend-car-road-tests" class="anchor" href="#dataset---motor-trend-car-road-tests" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dataset - Motor Trend Car Road Tests</h2>
+
+<p>The data was extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).</p>
+
+<ul>
+<li>
+<code>mpg</code>         Miles/(US) gallon <code>cyl</code> Number of cylinders <code>disp</code> Displacement (cu.in.) </li>
+<li>
+<code>hp</code> Gross horsepower <code>drat</code> Rear axle ratio <code>wt</code> Weight (lb/1000)</li>
+<li>
+<code>qsec</code> 1/4 mile time <code>vs</code> V/S <code>am</code> Transmission (0 = automatic, 1 = manual)</li>
+<li>
+<code>gear</code> Number of forward gears <code>carb</code>  Number of carburetors</li>
+</ul>
+
+<div class="highlight highlight-r"><pre>data(<span class="nv">mtcars</span>)</pre></div>
+
+<p>encoded the following variables factor variables: am, vs</p>
+
+<div class="highlight highlight-r"><pre><span class="nv">mtcars1</span> <span class="o">&lt;-</span> transform(<span class="nv">mtcars</span>, <span class="nv">am</span> <span class="o">=</span> as.factor(<span class="nv">am</span>), <span class="nv">vs</span> <span class="o">=</span> as.factor(<span class="nv">vs</span>))
+levels(<span class="nv">mtcars1</span><span class="k">$</span><span class="nv">am</span>) <span class="o">&lt;-</span> c(<span class="s2">"Automatic"</span>, <span class="s2">"Manual"</span>)</pre></div>
+
+<h2>
+<a id="exploratoty-data-analysis" class="anchor" href="#exploratoty-data-analysis" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exploratoty Data Analysis</h2>
+
+<div class="highlight highlight-r"><pre>library(<span class="nv">ggplot2</span>)
+<span class="nv">p</span> <span class="o">&lt;-</span> ggplot(<span class="nv">mtcars1</span>, aes(<span class="kt">factor</span>(<span class="nv">am</span>), <span class="nv">mpg</span>))
+<span class="nv">p</span> <span class="o">&lt;-</span> <span class="nv">p</span> <span class="o">+</span> geom_boxplot(aes(<span class="nv">fill</span> <span class="o">=</span> <span class="kt">factor</span>(<span class="nv">am</span>), <span class="nv">alpha</span> <span class="o">=</span> <span class="m">1</span><span class="o">/</span><span class="m">2</span>)) 
+<span class="nv">p</span> <span class="o">&lt;-</span> <span class="nv">p</span> <span class="o">+</span> labs(<span class="nv">title</span> <span class="o">=</span> <span class="s2">"figure1:MPG by Transmission Type"</span>) 
+<span class="nv">p</span> <span class="o">+</span> labs(<span class="nv">x</span> <span class="o">=</span> <span class="s2">"Transmission Type"</span>, <span class="nv">y</span> <span class="o">=</span> <span class="s2">"Miles per Gallon"</span>)</pre></div>
+
+<p><img src="./project_original_files/figure-html/boxplot.png" alt="plot of chunk boxplot"> 
+Here, We considered only one variable <code>am</code> to explore <code>mpg</code>
+The boxplot shows that there is a difference in the MPG by transmission type. Manual transmission seems to have more miles per gallon than automatic transmission. Let's do a simple Liner Regression model here.</p>
+
+<h2>
+<a id="simple-linear-regression" class="anchor" href="#simple-linear-regression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simple Linear Regression</h2>
+
+<p>To begin our model testing, we fit a simple linear regression for <code>mpg</code> with only one regressor <code>am</code>.</p>
+
+<p><em>Null hypothesis: There is no difference in the mean MPG for automatic and manual transmission</em></p>
+
+<div class="highlight highlight-r"><pre><span class="nv">fit</span> <span class="o">&lt;-</span> lm(<span class="nv">mpg</span><span class="k">~</span><span class="nv">am</span>, <span class="nv">data</span> <span class="o">=</span> <span class="nv">mtcars1</span>)
+<span class="nv">sm</span> <span class="o">&lt;-</span> summary(<span class="nv">fit</span>)
+<span class="nv">intercept</span> <span class="o">&lt;-</span> <span class="nv">sm</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">1</span>]
+<span class="nv">slope</span> <span class="o">&lt;-</span> <span class="nv">sm</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">2</span>]
+<span class="nv">sigma</span> <span class="o">&lt;-</span> <span class="nv">sm</span><span class="k">$</span><span class="nv">sigma</span>
+<span class="nv">rsquared</span> <span class="o">&lt;-</span> <span class="nv">sm</span><span class="k">$</span><span class="nv">r.squared</span>
+<span class="nv">p_value</span> <span class="o">&lt;-</span> <span class="nv">sm</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">2</span>,<span class="m">4</span>]
+<span class="nv">sm</span><span class="k">$</span><span class="nv">coef</span></pre></div>
+
+<pre><code>##             Estimate Std. Error t value  Pr(&gt;|t|)
+## (Intercept)   17.147      1.125  15.247 1.134e-15
+## amManual       7.245      1.764   4.106 2.850e-04
+</code></pre>
+
+<p><strong>Interpretting Coefficient</strong></p>
+
+<ul>
+<li>The Intercept 17.1474 is the average miles per gallon for automatic transmission, the Slope 7.2449 is the increased miles per gallon for manual transmision. </li>
+<li>r-squred value 0.3598 means our model only explains 0.3598% of the total variance.</li>
+<li>With a p-value of 2.8502 × 10<sup>-4</sup>, we reject the null hypothesis and claim that there is a signficiant difference in the mean MPG between manual transmission cars and automatic transmission cars. </li>
+</ul>
+
+<h2>
+<a id="multivariate-linear-regression" class="anchor" href="#multivariate-linear-regression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Multivariate Linear Regression</h2>
+
+<h3>
+<a id="correlation" class="anchor" href="#correlation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Correlation</h3>
+
+<p>To choose the appropriate covariates for the regression model, we did covariate adjustment and multiple models to prob the effects. Before that, let's look at the corrlation for <code>mpg</code> variable of our dataset <code>mtcars</code></p>
+
+<div class="highlight highlight-r"><pre>library(<span class="nv">corrplot</span>)
+<span class="nv">M</span> <span class="o">&lt;-</span> cor(<span class="nv">mtcars</span>)
+corrplot.mixed(<span class="nv">M</span>, <span class="nv">order</span> <span class="o">=</span> <span class="s2">"AOE"</span>)</pre></div>
+
+<p><img src="./project_original_files/figure-html/corrplot.png" alt="plot of chunk corrplot"> </p>
+
+<p>In addition to <code>am</code> (which must be included in our regression model to campare the two types of transmission ), we see that <code>wt</code>, <code>cyl</code>, <code>disp</code>, and <code>hp</code> are highly correlated with our dependent variable mpg. As such, they may be good candidates to include in our model. However, after we look at the correlation matrix, we see that <code>cyl</code> is highly correlated with <code>hp</code>. and <code>disp</code> is highly correlated with <code>wt</code>, and they are both corrlated with each other. Since predictors should not exhibit collinearity, we may should not have cyl and disp in in our model. Let's explore deeper!</p>
+
+<h3>
+<a id="nested-likelihood-ratio-test" class="anchor" href="#nested-likelihood-ratio-test" aria-hidden="true"><span class="octicon octicon-link"></span></a>Nested likelihood ratio test</h3>
+
+<p><em>Null Hyphothesis: all of the three linear regression models are the same.</em></p>
+
+<div class="highlight highlight-r"><pre><span class="nv">fit1</span> <span class="o">&lt;-</span> lm(<span class="nv">mpg</span> <span class="k">~</span> <span class="nv">am</span> , <span class="nv">data</span> <span class="o">=</span> <span class="nv">mtcars1</span>)
+<span class="nv">fit3</span> <span class="o">&lt;-</span> update(<span class="nv">fit1</span>, <span class="nv">mpg</span> <span class="k">~</span> <span class="nv">am</span> <span class="o">+</span> <span class="nv">wt</span> <span class="o">+</span> <span class="nv">hp</span>)
+<span class="nv">fit5</span> <span class="o">&lt;-</span> update(<span class="nv">fit1</span>, <span class="nv">mpg</span> <span class="k">~</span> <span class="nv">am</span> <span class="o">+</span> <span class="nv">wt</span> <span class="o">+</span> <span class="nv">hp</span> <span class="o">+</span> <span class="nv">cyl</span> <span class="o">+</span> <span class="nv">disp</span>)
+<span class="nv">var_table</span> <span class="o">&lt;-</span> anova(<span class="nv">fit1</span>, <span class="nv">fit3</span>, <span class="nv">fit5</span>)
+<span class="nv">var_table</span></pre></div>
+
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: mpg ~ am
+## Model 2: mpg ~ am + wt + hp
+## Model 3: mpg ~ am + wt + hp + cyl + disp
+##   Res.Df RSS Df Sum of Sq     F  Pr(&gt;F)    
+## 1     30 721                               
+## 2     28 180  2       541 43.08 5.6e-09 ***
+## 3     26 163  2        17  1.37    0.27    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+</code></pre>
+
+<p>With p-value 5.5763 × 10<sup>-9</sup>, we reject the null hypothesis and claim that our multivariate model is significantly different from our simple model. And with p-value 0.2722, we accept the null hypothesis that our <code>fit5</code> model is the same as the <code>fit4</code> model. Therefore, we will include <code>wt</code> and <code>hp</code> in our regression equation, which makes sense intuitively, since heavier cars and cars with horsepower should have lower MPGs.</p>
+
+<p>Therefore, our multivariate model is model 2: <strong>lm(mpg ~ am + wt + am*wt + hp, data = mtcars1)</strong> which has three regressors <code>am</code>,<code>wd</code> and <code>hp</code> for <code>mpg</code>.</p>
+
+<p><em>Null hypothesis: There is no difference in the mean MPG for automatic and manual transmission</em></p>
+
+<h3>
+<a id="residual-diagnostics--summarize" class="anchor" href="#residual-diagnostics--summarize" aria-hidden="true"><span class="octicon octicon-link"></span></a>Residual Diagnostics &amp; Summarize</h3>
+
+<div class="highlight highlight-r"><pre><span class="nv">fitbest</span> <span class="o">&lt;-</span> lm(<span class="nv">mpg</span> <span class="k">~</span> <span class="nv">am</span> <span class="o">+</span> <span class="nv">wt</span> <span class="o">+</span> <span class="nv">hp</span>, <span class="nv">data</span> <span class="o">=</span> <span class="nv">mtcars1</span>)
+par(<span class="nv">mfrow</span> <span class="o">=</span> c(<span class="m">2</span>,<span class="m">2</span>), <span class="nv">mar</span> <span class="o">=</span> c(<span class="m">3</span>,<span class="m">1</span>,<span class="m">2</span>,<span class="m">2</span>))
+plot(<span class="nv">fitbest</span>)</pre></div>
+
+<p><img src="./project_original_files/figure-html/dianosticplot.png" alt="plot of chunk dianosticplot"> </p>
+
+<p>Diagnostic plots show the residuals are normally distributed and homoskedastic. We can now summarize our model</p>
+
+<div class="highlight highlight-r"><pre><span class="nv">fitbest</span> <span class="o">&lt;-</span> lm(<span class="nv">mpg</span> <span class="k">~</span> <span class="nv">am</span> <span class="o">+</span> <span class="nv">wt</span> <span class="o">+</span> <span class="nv">hp</span>, <span class="nv">data</span> <span class="o">=</span> <span class="nv">mtcars1</span>)
+<span class="nv">smbest</span> <span class="o">&lt;-</span> summary(<span class="nv">fitbest</span>)
+<span class="nv">intercept1</span> <span class="o">&lt;-</span> <span class="nv">smbest</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">1</span>]
+<span class="nv">slope1</span> <span class="o">&lt;-</span> <span class="nv">smbest</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">2</span>]
+<span class="nv">sigma1</span> <span class="o">&lt;-</span> <span class="nv">smbest</span><span class="k">$</span><span class="nv">sigma</span>
+<span class="nv">rsquared1</span> <span class="o">&lt;-</span> <span class="nv">smbest</span><span class="k">$</span><span class="nv">r.squared</span>
+<span class="nv">p_value1</span> <span class="o">&lt;-</span> <span class="nv">smbest</span><span class="k">$</span><span class="nv">coef</span>[<span class="m">2</span>,<span class="m">4</span>]
+<span class="nv">smbest</span><span class="k">$</span><span class="nv">coef</span></pre></div>
+
+<pre><code>##             Estimate Std. Error t value  Pr(&gt;|t|)
+## (Intercept) 34.00288   2.642659  12.867 2.824e-13
+## amManual     2.08371   1.376420   1.514 1.413e-01
+## wt          -2.87858   0.904971  -3.181 3.574e-03
+## hp          -0.03748   0.009605  -3.902 5.464e-04
+</code></pre>
+
+<h3>
+<a id="plot-prediction-value-for-mpg" class="anchor" href="#plot-prediction-value-for-mpg" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plot Prediction Value for MPG</h3>
+
+<div class="highlight highlight-r"><pre><span class="nv">h</span> <span class="o">&lt;-</span> ggplot(<span class="nv">mtcars1</span>, aes(<span class="nv">wt</span>, <span class="nv">mpg</span>, <span class="nv">colour</span> <span class="o">=</span> <span class="kt">factor</span>(<span class="nv">am</span>)))
+<span class="nv">h</span> <span class="o">+</span> geom_point() <span class="o">+</span> stat_smooth(<span class="nv">method</span> <span class="o">=</span> <span class="nv">lm</span>)  <span class="o">+</span> labs(<span class="nv">x</span> <span class="o">=</span> <span class="s2">"weight(1000lbs)"</span>, <span class="nv">y</span> <span class="o">=</span> <span class="s2">"miles per gallon"</span>, <span class="nv">title</span> <span class="o">=</span> <span class="s2">"Confidence Interval for MPG"</span>) <span class="o">+</span> scale_colour_discrete(<span class="nv">name</span> <span class="o">=</span> <span class="s2">"Transmission Type"</span>)</pre></div>
+
+<p><img src="./project_original_files/figure-html/predictplot.png" alt="plot of chunk predictplot"> </p>
+
+<p><strong>Interpretting Coefficient</strong></p>
+
+<ul>
+<li>The Intercept 34.0029 is the average miles per gallon for automatic transmission when <code>wt</code> and <code>mpg</code> equal to 0, and the Slope 2.0837 is the increased miles per gallon for manual transmision. </li>
+<li>r-squred value 0.8399 shows that our model explains 0.8399% of the total variance. </li>
+<li>With a p-value of 0.1413, we have only 0.8587% confidence interval to reject the null hypothesis, therefore, with the 0.05 significance level, we claim that **no signficiant difference for MPG exist in manual and automatic transmission cars*. The small p_value for wt and hp show that <code>wt</code> and <code>hp</code> did indeed confound the relationship between am and mpg</li>
+</ul>
+        </section>
+
+        <footer>
+          Regression Model of Automatic and Manual Cars is maintained by <a href="https://github.com/shinezhou9">shinezhou9</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
